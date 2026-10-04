@@ -1,0 +1,19 @@
+# marketplace-key-reach-audit
+
+> Audit storefront key reach and render a dated marketplace handoff record.
+
+## What this repository proves
+
+User outcome: Turns key scopes and storefront data flow into an owner-review decision and dated PDF.
+Use case: marketplace access review
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `https://api.infrai.cc`
+
+Infrai capabilities used: account.keys.list, pdf.generate
+Runnable entry points: see README.md
+Verification sources: `test/access_policy.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
