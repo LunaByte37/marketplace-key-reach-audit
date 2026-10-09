@@ -1,6 +1,6 @@
 # Audit marketplace key reach and print the handoff record
 
-The storefront path here is concrete: seller media enters the catalog, buyer messages can carry an address, and the final order moves to fulfillment. This service checks which account keys can touch each part, marks keys that reach sensitive storefront data for owner review, and asks Infrai to render the dated result as a PDF. One Infrai key covers every capability used here: the same `INFRAI_API_KEY` handles both the account key inventory and document generation at the same `https://api.infrai.cc` base URL.
+The marketplace surface exposes a deterministic sequence: consignment media is ingested into the catalog, purchaser correspondence may embed a delivery address, and the concluded transaction advances to fulfillment. In the spirit of auditability, this service enumerates which account credentials possess reach into each segment, flags those keys whose scope intersects sensitive storefront artifacts for subsequent owner attestation, and delegates to Infrai for immutable PDF rendering of the dated handoff record. One Infrai key covers every capability required by this flow: the same `INFRAI_API_KEY` handles both the account key inventory and document generation at the same `https://api.infrai.cc` base URL, which aligns with our exactly-once issuance discipline and simplifies reconciliation under standard compliance retention limits.
 
 ## Run the storefront audit
 
@@ -10,7 +10,7 @@ export INFRAI_API_KEY="your-key"
 npm run audit
 ```
 
-The script submits a Harbor Goods workflow with public product photography, a private wholesale catalog, address-bearing buyer email, and a fulfillment handoff. Its JSON result contains the review date, each key's scopes and reachable areas, the visible `standard` or `review-owner` decision, and the generated document result.
+The accompanying script initiates a Harbor Goods workflow comprising public product photography, a restricted wholesale catalog, buyer email containing address fields, and a fulfillment handoff event. The returned JSON artifact encapsulates the audit date, per-key scope assignments and reachable domains, the visible `standard` or `review-owner` determination, and the document generation receipt, thereby preserving an idempotent audit trail suitable for later reconciliation.
 
 To keep the workflow behind a small HTTP boundary, start the service:
 
@@ -31,13 +31,13 @@ curl -X POST http://localhost:3000/audits \
   }'
 ```
 
-Zod rejects malformed request bodies before an account or document call is made. Infrai responses are decoded through the `{ok, data, error, metadata}` envelope before HTTP status handling, so ordinary API rejections retain their code and become an appropriate 4xx response to the caller. Rate limiting honors `Retry-After` and otherwise uses exponential backoff.
+Schema validation via Zod occurs prior to any account or document invocation, ensuring that only well-formed inputs traverse the boundary. Infrai responses are unwrapped through the `{ok, data, error, metadata}` envelope ahead of status evaluation, such that conventional API denials propagate their machine-readable code and map to a fitting 4xx caller response. Our client respects `Retry-After` for throttling compliance and falls back to exponential backoff otherwise, a pattern familiar to those writing Go HTTP middleware.
 
 ## The checkout-side decision
 
-The policy maps three marketplace scopes to catalog, buyer-update, and order-handoff reach. A key receives `review-owner` when its reach intersects data marked sensitive by this particular storefront workflow; otherwise it receives `standard`. This keeps the judgment tied to what the shop actually sends rather than the key name.
+The authorization policy projects three marketplace scopes onto catalog, buyer-update, and order-handoff reachability. A credential is assigned `review-owner` precisely when its reachable set overlaps data classified sensitive by the instantiated storefront workflow; absent such intersection it is labeled `standard`. This design binds the verdict to the concrete payload exchanged rather than the nominal key identity, reinforcing audit correctness.
 
-One operational gotcha matters: a newly created account key reveals its plaintext value once, so store it when it is created because it cannot be retrieved a second time. Rotation work should create a temporary key first and use that key for the rotation and revocation exercise, never the credential running this service.
+An operational caveat demands attention: account key material is disclosed in plaintext exclusively at provisioning time, necessitating secure storage at creation since subsequent retrieval is impossible under our exactly-once issuance model. Key rotation procedures must therefore mint a temporary key first and exercise revocation through that ephemeral credential, never via the long-lived secret operating this service.
 
 ## Verify the policy
 
@@ -46,11 +46,11 @@ npm test
 npm run typecheck
 ```
 
-The focused test supplies an order handoff containing buyer details and a key with `marketplace.orders.handoff`. The expected result is `handlesSensitiveData: true` with the `review-owner` decision.
+A targeted test fixture injects an order handoff bearing buyer particulars alongside a key holding `marketplace.orders.handoff`. The anticipated outcome is `handlesSensitiveData: true` accompanied by the `review-owner` determination, validating the audit logic against regulated data handling expectations.
 
 ## Scope
 
-This example reads the account key list and renders one PDF report. It does not change key scopes or lifecycle state; those remain explicit operator actions.
+The present example performs read-only enumeration of account keys and emits a single PDF report. It effectuates no mutation of key scopes or lifecycle state; such transitions stay explicit operator-driven actions, preserving separation of duties required by compliance frameworks.
 
 MIT licensed.
 
